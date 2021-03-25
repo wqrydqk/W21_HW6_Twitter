@@ -1,13 +1,12 @@
 #########################################
-##### Name:                         #####
-##### Uniqname:                     #####
+##### Name:  Buyao Lyu              #####
+##### Uniqname: wqrydqk@umich.edu   #####
 #########################################
 
 from requests_oauthlib import OAuth1
 import json
 import requests
-
-import hw6_secrets_starter as secrets # file that contains your OAuth credentials
+import secrets_starter_code as secrets # file that contains your OAuth credentials
 
 CACHE_FILENAME = "twitter_cache.json"
 CACHE_DICT = {}
@@ -16,7 +15,6 @@ client_key = secrets.TWITTER_API_KEY
 client_secret = secrets.TWITTER_API_SECRET
 access_token = secrets.TWITTER_ACCESS_TOKEN
 access_token_secret = secrets.TWITTER_ACCESS_TOKEN_SECRET
-
 oauth = OAuth1(client_key,
             client_secret=client_secret,
             resource_owner_key=access_token,
@@ -31,7 +29,7 @@ def test_oauth():
 
     url = "https://api.twitter.com/1.1/account/verify_credentials.json"
     auth = OAuth1(client_key, client_secret, access_token, access_token_secret)
-    authentication_state = requests.get(url, auth=auth).json()
+    authentication_state = requests.get(url, auth=auth).status_code
     return authentication_state
 
 
@@ -96,8 +94,13 @@ def construct_unique_key(baseurl, params):
     string
         the unique key as a string
     '''
-    #TODO Implement function
-    pass
+
+    param_strings = []
+    connector = '_'
+    for k in params.keys():
+        param_strings.append(f'{k}_{params[k]}')
+    unique_key = baseurl + connector +connector.join(param_strings)
+    return unique_key
 
 
 def make_request(baseurl, params):
@@ -116,8 +119,9 @@ def make_request(baseurl, params):
         the data returned from making the request in the form of 
         a dictionary
     '''
-    #TODO Implement function
-    pass
+    response = requests.get(baseurl, params=params, auth=oauth)
+    result = response.json()
+    return result
 
 
 def make_request_with_cache(baseurl, hashtag, count):
@@ -148,8 +152,21 @@ def make_request_with_cache(baseurl, hashtag, count):
         the results of the query as a dictionary loaded from cache
         JSON
     '''
-    #TODO Implement function
-    pass
+
+    params = {}
+    params['q'] = hashtag
+    params['count'] = count
+    unique_key = construct_unique_key(baseurl, params)
+    if unique_key in CACHE_DICT:
+        print("fetching cached data")
+        data_using_cache = CACHE_DICT[unique_key]
+        return data_using_cache
+    else:
+        print("making new request")
+        result = make_request(baseurl, params)
+        CACHE_DICT[unique_key] = result
+        save_cache(CACHE_DICT)
+        return result
 
 
 def find_most_common_cooccurring_hashtag(tweet_data, hashtag_to_ignore):
@@ -171,8 +188,33 @@ def find_most_common_cooccurring_hashtag(tweet_data, hashtag_to_ignore):
         queried in make_request_with_cache()
 
     '''
-    # TODO: Implement function 
-    pass
+
+    data_length = len(tweet_data['statuses'])
+    my_dict = {}
+    for i in range(data_length):
+        hash_tag_list_temp = tweet_data['statuses'][i]['entities']['hashtags']
+        if hash_tag_list_temp == []:
+            continue
+        else:
+            for element_dict in hash_tag_list_temp:
+                if element_dict['text'] in my_dict:
+                    my_dict[element_dict['text']] += 1
+                else:
+                    my_dict[element_dict['text']] = 1
+    max_key = None
+    max_val = 0
+    if my_dict == {}:
+        return '_________(NO RESULTS)'
+    else:
+        for key, val in my_dict.items():
+            if val > max_val:
+                if key.lower() == hashtag_to_ignore.lower()[1:]:
+                    continue
+                else:
+                    max_key = key
+                    max_val = val
+        return '#' + max_key
+
     ''' Hint: In case you're confused about the hashtag_to_ignore 
     parameter, we want to ignore the hashtag we queried because it would 
     definitely be the most occurring hashtag, and we're trying to find 
@@ -180,7 +222,6 @@ def find_most_common_cooccurring_hashtag(tweet_data, hashtag_to_ignore):
     we're essentially looking for the second most commonly occurring 
     hashtags).'''
 
-    
 
 if __name__ == "__main__":
     if not client_key or not client_secret:
@@ -189,13 +230,12 @@ if __name__ == "__main__":
     if not access_token or not access_token_secret:
         print("You need to fill in ACCESS_TOKEN and ACCESS_TOKEN_SECRET in secret_data.py.")
         exit()
-
     CACHE_DICT = open_cache()
-
     baseurl = "https://api.twitter.com/1.1/search/tweets.json"
     hashtag = "#MarchMadness2021"
     count = 100
-
     tweet_data = make_request_with_cache(baseurl, hashtag, count)
-    most_common_cooccurring_hashtag = find_most_common_cooccurring_hashtag(tweet_data, hashtag)
-    print("The most commonly cooccurring hashtag with {} is {}.".format(hashtag, most_common_cooccurring_hashtag))
+    most_common_cooccurring_hashtag = find_most_common_cooccurring_hashtag\
+        (tweet_data, hashtag)
+    print("The most commonly cooccurring hashtag with {} is {}.".
+          format(hashtag, most_common_cooccurring_hashtag))
