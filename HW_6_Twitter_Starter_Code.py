@@ -20,6 +20,7 @@ oauth = OAuth1(client_key,
             resource_owner_key=access_token,
             resource_owner_secret=access_token_secret)
 
+
 def test_oauth():
     ''' Helper function that returns an HTTP 200 OK response code and a 
     representation of the requesting user if authentication was 
@@ -69,7 +70,7 @@ def save_cache(cache_dict):
     None
     '''
     dumped_json_cache = json.dumps(cache_dict)
-    fw = open(CACHE_FILENAME,"w")
+    fw = open(CACHE_FILENAME, "w")
     fw.write(dumped_json_cache)
     fw.close() 
 
@@ -99,7 +100,7 @@ def construct_unique_key(baseurl, params):
     connector = '_'
     for k in params.keys():
         param_strings.append(f'{k}_{params[k]}')
-    unique_key = baseurl + connector +connector.join(param_strings)
+    unique_key = baseurl + connector + connector.join(param_strings)
     return unique_key
 
 
@@ -235,7 +236,7 @@ if __name__ == "__main__":
     hashtag = "#MarchMadness2021"
     count = 100
     tweet_data = make_request_with_cache(baseurl, hashtag, count)
-    most_common_cooccurring_hashtag = find_most_common_cooccurring_hashtag\
-        (tweet_data, hashtag)
+    most_common_cooccurring_hashtag = find_most_common_cooccurring_hashtag(
+        tweet_data, hashtag)
     print("The most commonly cooccurring hashtag with {} is {}.".
           format(hashtag, most_common_cooccurring_hashtag))
