@@ -100,6 +100,7 @@ def construct_unique_key(baseurl, params):
     connector = '_'
     for k in params.keys():
         param_strings.append(f'{k}_{params[k]}')
+    param_strings.sort()
     unique_key = baseurl + connector + connector.join(param_strings)
     return unique_key
 
@@ -158,6 +159,7 @@ def make_request_with_cache(baseurl, hashtag, count):
     params['q'] = hashtag
     params['count'] = count
     unique_key = construct_unique_key(baseurl, params)
+    CACHE_DICT = open_cache()
     if unique_key in CACHE_DICT:
         print("fetching cached data")
         data_using_cache = CACHE_DICT[unique_key]
@@ -208,13 +210,14 @@ def find_most_common_cooccurring_hashtag(tweet_data, hashtag_to_ignore):
         return '_________(NO RESULTS)'
     else:
         for key, val in my_dict.items():
+            key_to_compare = key.lower()
             if val > max_val:
-                if key.lower() == hashtag_to_ignore.lower()[1:]:
+                if key_to_compare == hashtag_to_ignore.lower()[1:]:
                     continue
                 else:
-                    max_key = key
+                    max_key = key_to_compare
                     max_val = val
-        return '#' + max_key
+        return max_key
 
     ''' Hint: In case you're confused about the hashtag_to_ignore 
     parameter, we want to ignore the hashtag we queried because it would 
@@ -231,7 +234,7 @@ if __name__ == "__main__":
     if not access_token or not access_token_secret:
         print("You need to fill in ACCESS_TOKEN and ACCESS_TOKEN_SECRET in secret_data.py.")
         exit()
-    CACHE_DICT = open_cache()
+    # CACHE_DICT = open_cache()
     baseurl = "https://api.twitter.com/1.1/search/tweets.json"
     hashtag = "#MarchMadness2021"
     count = 100
